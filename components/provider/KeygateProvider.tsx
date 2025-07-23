@@ -32,7 +32,7 @@ createLifiConfig({
   preloadChains: false,
 });
 
-export function KeygateWagmiProvider({ children }: { children: React.ReactNode }) {
+export function KeygateProvider({ children }: { children: React.ReactNode }) {
   const { data: chains } = useQuery({
     queryKey: ["chains"] as const,
     queryFn: async () => {
