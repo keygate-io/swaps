@@ -10,16 +10,15 @@ import {
   getContractCallsQuote,
 } from "@lifi/sdk";
 import {
-  CircleDollarSign,
-  Loader,
-  AlertCircle,
-  XCircle,
-  CheckCircle,
-  ArrowRight,
-} from "lucide-react";
+  CurrencyDollarIcon,
+  ArrowPathIcon,
+  ExclamationTriangleIcon,
+  XCircleIcon,
+  CheckCircleIcon,
+  ArrowRightIcon,
+} from "@heroicons/react/24/outline";
 import {
   encodeDepositERC20CallData,
-  encodeApproveCallData,
 } from "../lib/encodeCallData";
 import {
   USDC_TOKEN_ADDRESS,
@@ -45,7 +44,8 @@ type LifiSteps = LiFiStepExtended[];
 
 interface PurchaseButtonProps {
   value: string | number;
-  currency?: string;
+  fromCurrency: string;
+  toCurrency: string;
   onProcessingChange?: (processing: boolean) => void;
   disableToggle?: boolean;
   destinationAddress: string;
@@ -53,7 +53,8 @@ interface PurchaseButtonProps {
 
 export function PurchaseButton({
   value,
-  currency = "ICP",
+  fromCurrency,
+  toCurrency,
   destinationAddress,
   onProcessingChange,
   disableToggle,
@@ -83,7 +84,8 @@ export function PurchaseButton({
       return (
         <DisplayQuote
           value={value}
-          currency={currency}
+          fromCurrency={fromCurrency}
+          toCurrency={toCurrency}
           onProcessingChange={onProcessingChange}
           disableToggle={disableToggle}
           destinationAddress={destinationAddress}
@@ -96,15 +98,24 @@ export function PurchaseButton({
 
 type DisplayQuoteProps = {
   value: string | number;
-  currency: string;
+  fromCurrency: string;
+  toCurrency: string;
   destinationAddress: string;
   onProcessingChange?: (processing: boolean) => void;
   disableToggle?: boolean;
 };
 
+// Mapping from token symbol to CoinGecko ID
+const COINGECKO_IDS: Record<string, string> = {
+  ICP: "internet-computer",
+  ETH: "ethereum",
+  USDC: "usd-coin",
+};
+
 function DisplayQuote({
   value,
-  currency,
+  fromCurrency,
+  toCurrency,
   destinationAddress,
   onProcessingChange,
   disableToggle,
@@ -113,23 +124,45 @@ function DisplayQuote({
   const [quote, setQuote] = useState<any>(null);
   const [steps, setSteps] = useState<LifiSteps | null>(null);
   const [timers, setTimers] = useState<{ [stepId: string]: number }>({});
-  const [desiredTokenPrice, setDesiredTokenPrice] = useState<number | null>(
-    null
-  );
+  const [fromTokenPrice, setFromTokenPrice] = useState<number | null>(null);
+  const [toTokenPrice, setToTokenPrice] = useState<number | null>(null);
   const [usdcNeeded, setUsdcNeeded] = useState<string>("1"); // default to 1 USDC for fallback
   const [activeRoutes, setActiveRoutes] = useState<any[]>([]);
 
   // Use refs to avoid unnecessary rerenders
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Memoize the USDC calculation to avoid recalculating on every render
+  // Fetch both from and to token prices from CoinGecko
+  useEffect(() => {
+    const fetchPrices = async () => {
+      const fromId = COINGECKO_IDS[fromCurrency];
+      const toId = COINGECKO_IDS[toCurrency];
+      try {
+        const ids = [fromId, toId].join(",");
+        const res = await fetch(
+          `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`
+        );
+        const data = await res.json();
+        setFromTokenPrice(data[fromId]?.usd || null);
+        setToTokenPrice(data[toId]?.usd || null);
+      } catch (e) {
+        setFromTokenPrice(null);
+        setToTokenPrice(null);
+      }
+    };
+    fetchPrices();
+  }, [fromCurrency, toCurrency]);
+
+  // Memoize the calculation to avoid recalculating on every render
   const calculatedUsdcNeeded = useMemo(() => {
-    if (currency === "ICP" && desiredTokenPrice) {
-      const total = Number(value) * desiredTokenPrice;
+    if (fromTokenPrice && toTokenPrice) {
+      // value is in toCurrency, convert to fromCurrency equivalent
+      // amount_in_from = value * (toTokenPrice / fromTokenPrice)
+      const total = Number(value) * (toTokenPrice / fromTokenPrice);
       return Math.round(total * 1_000_000).toString();
     }
     return "1";
-  }, [currency, desiredTokenPrice, value]);
+  }, [fromTokenPrice, toTokenPrice, value]);
 
   // Update usdcNeeded when calculation changes
   useEffect(() => {
@@ -141,39 +174,14 @@ function DisplayQuote({
     if (quote) {
       const routes = getActiveRoutes();
       setActiveRoutes(routes);
+      console.log("quote", quote);
       console.log("Active routes", routes);
     }
   }, [quote]);
 
-  // Fetch ICP price in USD and multiply by value
-  useEffect(() => {
-    if (currency === "ICP") {
-      fetch(
-        "https://api.coingecko.com/api/v3/simple/price?ids=internet-computer&vs_currencies=usd"
-      )
-        .then((res) => res.json())
-        .then((data) => {
-          const price = data["internet-computer"]?.usd;
-          if (price) {
-            setDesiredTokenPrice(price);
-          }
-        })
-        .catch(console.error);
-    } else if (currency === "USDC") {
-      setDesiredTokenPrice(1); // 1:1 rate for USDC
-    }
-  }, [currency]);
-
   // Memoize quote request parameters to prevent unnecessary API calls
   const quoteParams = useMemo(() => {
     if (!address) return null;
-
-    const approveERC20CallData = encodeApproveCallData(
-      USDC_TOKEN_ADDRESS,
-      usdcNeeded
-    );
-
-    // No need to handle principal bytes here; encodeDepositEthCallData does it
     const depositERC20CallData = encodeDepositERC20CallData(
       USDC_TOKEN_ADDRESS,
       usdcNeeded,
@@ -183,7 +191,7 @@ function DisplayQuote({
     return {
       fromChain: "OPT" as const,
       toChain: "ETH" as const,
-      fromToken: "USDC" as const,
+      fromToken: "ETH" as const,
       toToken: "USDC" as const,
       fromAddress: address,
       toAmount: usdcNeeded,
@@ -199,7 +207,7 @@ function DisplayQuote({
         },
       ],
     };
-  }, [address, usdcNeeded]);
+  }, [address, usdcNeeded, destinationAddress]);
 
   useEffect(() => {
     if (address && usdcNeeded && usdcNeeded !== "1" && quoteParams) {
@@ -228,46 +236,76 @@ function DisplayQuote({
     });
   }, [steps]);
 
-  // Optimized countdown timer - only update when necessary
-  useEffect(() => {
-    if (!steps || steps.length === 0) return;
-
-    // Clear existing interval
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
-
-    // Check if any steps need countdown
-    const hasPendingSteps = steps.some(
-      (step) => step.execution?.status === "PENDING"
-    );
-
-    if (!hasPendingSteps) return;
-
-    intervalRef.current = setInterval(() => {
-      setTimers((prev) => {
-        const updated: { [stepId: string]: number } = {};
-        let hasChanges = false;
-
-        steps.forEach((step) => {
-          if (step.execution?.status === "PENDING" && prev[step.id] > 0) {
-            updated[step.id] = prev[step.id] - 1;
-            hasChanges = true;
-          } else {
-            updated[step.id] = prev[step.id];
+  // Compute total gas cost in USD
+  const totalGasCostUSD = useMemo(() => {
+    if (!steps) return null;
+    let total = 0;
+    for (const step of steps) {
+      if (step.estimate?.gasCosts) {
+        for (const gas of step.estimate.gasCosts) {
+          if (gas.amountUSD) {
+            total += Number(gas.amountUSD);
           }
-        });
-
-        return hasChanges ? updated : prev;
-      });
-    }, 1000);
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+        }
       }
-    };
+    }
+    return total;
   }, [steps]);
+
+  // Compute total fee cost in USD
+  const totalFeeCostUSD = useMemo(() => {
+    if (!steps) return null;
+    let total = 0;
+    for (const step of steps) {
+      if (step.estimate?.feeCosts) {
+        for (const fee of step.estimate.feeCosts) {
+          if (fee.amountUSD) {
+            total += Number(fee.amountUSD);
+          }
+        }
+      }
+    }
+    return total;
+  }, [steps]);
+
+  // Compute total estimated execution time (in seconds)
+  const totalExecutionTime = useMemo(() => {
+    if (!steps) return null;
+    let total = 0;
+    for (const step of steps) {
+      if (typeof step.estimate?.executionDuration === "number") {
+        total += step.estimate.executionDuration;
+      }
+    }
+    return total;
+  }, [steps]);
+
+  // --- Simplified countdown timer for total execution time ---
+  const [remainingTime, setRemainingTime] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (typeof totalExecutionTime === "number" && totalExecutionTime > 0) {
+      setRemainingTime(totalExecutionTime);
+      const interval = setInterval(() => {
+        setRemainingTime((prev) => {
+          if (prev === null) return null;
+          if (
+            steps?.some((step) => step.execution?.status === "ACTION_REQUIRED")
+          ) {
+            return prev;
+          }
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(interval);
+    } else {
+      setRemainingTime(null);
+    }
+  }, [totalExecutionTime]);
 
   // Memoize status display function to prevent recreation on every render
   const statusToDisplay = useCallback((step: LiFiStepExtended) => {
@@ -277,15 +315,15 @@ function DisplayQuote({
       case "PENDING":
         return (
           <span className="flex items-center gap-1 text-neutral-700 dark:text-neutral-200">
-            <Loader className="animate-spin text-blue-500" size={16} />{" "}
+            <ArrowPathIcon className="animate-spin text-blue-500 w-4 h-4 align-bottom" />{" "}
             Processing transaction...
           </span>
         );
       case "ACTION_REQUIRED":
         return (
           <span className="flex items-center gap-1 text-neutral-700 dark:text-neutral-200">
-            <AlertCircle className="text-blue-500" size={16} /> Waiting for
-            approval...
+            <ExclamationTriangleIcon className="text-blue-500 w-4 h-4" />{" "}
+            Waiting for approval...
           </span>
         );
       case "FAILED":
@@ -299,13 +337,13 @@ function DisplayQuote({
 
         return (
           <span className="flex items-center gap-1 text-neutral-700 dark:text-neutral-200">
-            <XCircle className="text-red-500" size={16} /> {displayMessage}
+            <XCircleIcon className="text-red-500 w-4 h-4" /> {displayMessage}
           </span>
         );
       case "DONE":
         return (
           <span className="flex items-center gap-1 text-neutral-700 dark:text-neutral-200">
-            <CheckCircle className="text-green-500" size={16} /> Transaction
+            <CheckCircleIcon className="text-green-500 w-4 h-4" /> Transaction
             completed
           </span>
         );
@@ -336,22 +374,16 @@ function DisplayQuote({
     return `${m}:${s.toString().padStart(2, "0")}`;
   }, []);
 
-  // Memoize formatted USDC amount to prevent recalculation
-  const formattedUsdcAmount = useMemo(() => {
-    if (!quote) return null;
-    return (Number(quote.estimate.fromAmount) / 1_000_000).toLocaleString(
+  // Memoize price display
+  const priceDisplay = useMemo(() => {
+    if (!fromTokenPrice || !toTokenPrice) return null;
+    return (Number(value) * (toTokenPrice / fromTokenPrice)).toLocaleString(
       undefined,
-      { maximumFractionDigits: 6 }
+      {
+        maximumFractionDigits: 6,
+      }
     );
-  }, [quote]);
-
-  // Memoize ICP price display
-  const desiredTokenPriceDisplay = useMemo(() => {
-    if (!desiredTokenPrice) return null;
-    return (Number(value) * desiredTokenPrice).toLocaleString(undefined, {
-      maximumFractionDigits: 6,
-    });
-  }, [desiredTokenPrice, value]);
+  }, [fromTokenPrice, toTokenPrice, value]);
 
   // Compute if processing (any step is PENDING or ACTION_REQUIRED)
   const isProcessing = useMemo(() => {
@@ -373,48 +405,70 @@ function DisplayQuote({
   return (
     <>
       <div className="flex items-center gap-2">
-        <div>Press confirm to pay using USDC on Optimism.</div>
+        <div>Press confirm to pay using {fromCurrency} on Optimism.</div>
       </div>
       <div className="flex flex-row gap-2">
-        <CircleDollarSign />
         {quote ? (
-          <div className="flex flex-row gap-2">
-            <div>{formattedUsdcAmount} USDC</div>
+          <div className="flex flex-row items-center gap-2">
             <div>
-              <ArrowRight />
+              <CurrencyDollarIcon className="w-5 h-5" />
             </div>
             <div>
-              {value} {currency}
+              {priceDisplay} {fromCurrency}
+            </div>
+            <div>
+              <ArrowRightIcon className="w-5 h-5 align-bottom" />
+            </div>
+            <div>
+              {value} {toCurrency}
             </div>
           </div>
         ) : (
           <div>Fetching quote...</div>
         )}
       </div>
-      {desiredTokenPrice && (
-        <div className="text-xs text-gray-500">
-          {value} {currency} ≈ {desiredTokenPriceDisplay} USDC
-        </div>
-      )}
       <div className="flex flex-col gap-2">
+        {/* Estimates Section */}
+        {(typeof totalGasCostUSD === "number" && totalGasCostUSD > 0) ||
+        (typeof totalFeeCostUSD === "number" && totalFeeCostUSD > 0) ||
+        (typeof totalExecutionTime === "number" && totalExecutionTime > 0) ? (
+          <div className="rounded bg-neutral-100 dark:bg-neutral-800 p-3 mb-2 text-xs text-gray-700 dark:text-gray-200 flex flex-col gap-1">
+            <span className="font-semibold text-sm mb-1">Estimate</span>
+            {typeof totalGasCostUSD === "number" && totalGasCostUSD > 0 && (
+              <div>
+                Total gas cost:{" "}
+                <span className="font-mono">${totalGasCostUSD.toFixed(4)}</span>
+              </div>
+            )}
+            {typeof totalFeeCostUSD === "number" && totalFeeCostUSD > 0 && (
+              <div>
+                Total fee cost:{" "}
+                <span className="font-mono">${totalFeeCostUSD.toFixed(4)}</span>
+              </div>
+            )}
+            {typeof totalExecutionTime === "number" &&
+              totalExecutionTime > 0 && (
+                <div>
+                  Total time:{" "}
+                  <span className="font-mono">
+                    {formatTime(remainingTime ?? totalExecutionTime)}
+                  </span>
+                </div>
+              )}
+          </div>
+        ) : null}
         {steps?.map((step) => (
           <div key={step.id} className="flex flex-col gap-1">
             <div>{statusToDisplay(step)}</div>
-            {step.execution?.status !== "DONE" && (
-              <div>
-                Estimated time:{" "}
-                {formatTime(timers[step.id] ?? step.estimate.executionDuration)}
-              </div>
-            )}
           </div>
         ))}
       </div>
       <button
         className={
-          `bg-blue-500 text-white px-4 py-2 rounded-md transition ` +
+          `bg-black text-white px-4 py-2 rounded-md transition ` +
           (isProcessing
             ? "opacity-50 cursor-not-allowed"
-            : "hover:bg-blue-600 hover:cursor-pointer")
+            : "hover:bg-gray-800 hover:cursor-pointer")
         }
         onClick={confirm}
         disabled={isProcessing}

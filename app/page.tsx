@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRightLeft } from "lucide-react";
+import { ArrowPathIcon } from "@heroicons/react/24/outline";
 
 export default function Home() {
   return (
@@ -15,7 +15,7 @@ export default function Home() {
           className="block p-6 border border-gray-200 bg-white dark:bg-neutral-900 transition group"
         >
           <div className="flex items-center gap-4 mb-3">
-            <ArrowRightLeft className="w-10 h-10 text-blue-500" />
+            <ArrowPathIcon className="w-10 h-10 text-blue-500" />
             <h2 className="text-xl font-semibold">
               USDC (Optimism) → Native ICP (Internet Computer)
             </h2>
@@ -30,7 +30,7 @@ export default function Home() {
           className="block p-6 border border-gray-200 bg-white dark:bg-neutral-900 transition group"
         >
           <div className="flex items-center gap-4 mb-3">
-            <ArrowRightLeft className="w-10 h-10 text-blue-500" />
+            <ArrowPathIcon className="w-10 h-10 text-blue-500" />
             <h2 className="text-xl font-semibold">
               USDC (Optimism) → ckUSDC (Internet Computer)
             </h2>

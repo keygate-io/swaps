@@ -4,12 +4,10 @@ import { WalletInformation } from "@/components/debug/WalletInformation";
 import { PurchaseButton } from "@/components/PurchaseButton";
 import { useState } from "react";
 import Link from "next/link";
-import { TransactionTester } from "../../components/debug/TransactionTester";
 
 export default function UsdcToIcpPage() {
-  const [testLowAmount, setTestLowAmount] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const icpAmount = testLowAmount ? 0.01 : 1;
+  const icpAmount = 100;
   return (
     <div className="font-sans grid grid-rows-[20px_1fr_20px] min-h-screen p-8 pb-20 gap-16 sm:p-20">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
@@ -23,28 +21,12 @@ export default function UsdcToIcpPage() {
           </div>
           <div className="flex flex-col gap-4">
             <h2 className="text-2xl">Buy NFT</h2>
-            {/* Toggle for low amount testing */}
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={testLowAmount}
-                onChange={() => setTestLowAmount((v) => !v)}
-                className="accent-blue-500"
-                disabled={isProcessing}
-              />
-              <span className="text-sm">Test with low amount (0.01 ICP)</span>
-            </label>
-            <p className="text-4xl font-semibold">{icpAmount} ICP</p>
-            <p className="text-sm text-gray-500">
-              Owner principal is{" "}
-              <span className="font-bold">
-                wtzxg-u3qsq-7drpw-3iytd-x4mv2-e53xw-e5xyy-g7577-dc6ky-266ly-qqe
-              </span>
-            </p>
+            <p className="text-4xl font-semibold">{icpAmount} USDC</p>
 
             <PurchaseButton
               value={icpAmount}
-              currency="ICP"
+              fromCurrency="ETH"
+              toCurrency="USDC"
               onProcessingChange={setIsProcessing}
               disableToggle={isProcessing}
               destinationAddress="wtzxg-u3qsq-7drpw-3iytd-x4mv2-e53xw-e5xyy-g7577-dc6ky-266ly-qqe"
@@ -54,8 +36,6 @@ export default function UsdcToIcpPage() {
             </p>
           </div>
         </div>
-        <WalletInformation />
-        <TransactionTester />
       </main>
     </div>
   );
