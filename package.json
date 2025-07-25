@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@dfinity/cketh": "^3.4.11",
     "@dfinity/principal": "^3.0.1",
     "@lifi/sdk": "^3.8.1",
     "@lifi/wallet-management": "^3.12.1",

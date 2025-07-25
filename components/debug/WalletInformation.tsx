@@ -1,6 +1,5 @@
 import { useAccount, useDisconnect } from "wagmi";
-import { WalletOptions } from "./WalletOptions";
-import { disconnect } from "wagmi/actions";
+import { WalletOptions } from "../WalletOptions";
 
 function ConnectWallet() {
   const { isConnected } = useAccount();
@@ -16,7 +15,7 @@ function ConnectWallet() {
   return <WalletOptions />;
 }
 
-export function DebugWagmi() {
+export function WalletInformation() {
   const { address, isConnected } = useAccount();
   return (
     <div>

@@ -21,8 +21,10 @@ import {
   encodeDepositERC20CallData,
   encodeApproveCallData,
 } from "../lib/encodeCallData";
-import { Principal } from "@dfinity/principal";
-import { pad } from "viem";
+import {
+  USDC_TOKEN_ADDRESS,
+  CKUSDC_HELPER_CONTRACT_ADDRESS,
+} from "../lib/constants";
 
 function ConnectWallet() {
   return (
@@ -167,13 +169,13 @@ function DisplayQuote({
     if (!address) return null;
 
     const approveERC20CallData = encodeApproveCallData(
-      "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      USDC_TOKEN_ADDRESS,
       usdcNeeded
     );
 
     // No need to handle principal bytes here; encodeDepositEthCallData does it
     const depositERC20CallData = encodeDepositERC20CallData(
-      "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      USDC_TOKEN_ADDRESS,
       usdcNeeded,
       destinationAddress
     );
@@ -188,17 +190,12 @@ function DisplayQuote({
       contractCalls: [
         {
           fromAmount: usdcNeeded,
-          fromTokenAddress: "0x0000000000000000000000000000000000000000",
-          toContractAddress: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-          toContractCallData: approveERC20CallData,
-          toContractGasLimit: "21000",
-        },
-        {
-          fromAmount: usdcNeeded,
-          fromTokenAddress: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // USDC token address,
-          toContractAddress: "0x18901044688D3756C35Ed2b36D93e6a5B8e00E68", // ckUSDC helper contract address,
+          fromTokenAddress: USDC_TOKEN_ADDRESS,
+          toContractAddress: CKUSDC_HELPER_CONTRACT_ADDRESS,
           toContractCallData: depositERC20CallData,
           toContractGasLimit: "80000",
+          toFallbackAddress: "0x1c9f0d9905Daceb6A1E0dFb7f3fB37288AB1515B",
+          toApprovalAddress: CKUSDC_HELPER_CONTRACT_ADDRESS,
         },
       ],
     };

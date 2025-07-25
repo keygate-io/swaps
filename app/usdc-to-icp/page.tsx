@@ -1,9 +1,10 @@
 "use client";
 
-import { DebugWagmi } from "@/components/DebugWagmi";
+import { WalletInformation } from "@/components/debug/WalletInformation";
 import { PurchaseButton } from "@/components/PurchaseButton";
 import { useState } from "react";
 import Link from "next/link";
+import { TransactionTester } from "../../components/debug/TransactionTester";
 
 export default function UsdcToIcpPage() {
   const [testLowAmount, setTestLowAmount] = useState(false);
@@ -12,7 +13,9 @@ export default function UsdcToIcpPage() {
   return (
     <div className="font-sans grid grid-rows-[20px_1fr_20px] min-h-screen p-8 pb-20 gap-16 sm:p-20">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Link href="/" className="mb-4 text-blue-500 hover:underline">← Back to use cases</Link>
+        <Link href="/" className="mb-4 text-blue-500 hover:underline">
+          ← Back to use cases
+        </Link>
         <div className="flex flex-row gap-14">
           <div className="flex flex-col gap-4">
             <h2 className="text-2xl">Token</h2>
@@ -51,7 +54,8 @@ export default function UsdcToIcpPage() {
             </p>
           </div>
         </div>
-        <DebugWagmi />
+        <WalletInformation />
+        <TransactionTester />
       </main>
     </div>
   );
