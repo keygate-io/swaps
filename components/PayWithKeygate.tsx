@@ -1,11 +1,9 @@
-import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useAccount } from "wagmi";
 import { WalletOptions } from "./WalletOptions";
 import {
   convertQuoteToRoute,
   executeRoute,
-  getQuote,
-  getActiveRoutes,
   LiFiStepExtended,
   getContractCallsQuote,
 } from "@lifi/sdk";
@@ -17,9 +15,7 @@ import {
   CheckCircleIcon,
   ArrowRightIcon,
 } from "@heroicons/react/24/outline";
-import {
-  encodeDepositERC20CallData,
-} from "../lib/encodeCallData";
+import { encodeDepositERC20CallData } from "../lib/encodeCallData";
 import {
   USDC_TOKEN_ADDRESS,
   CKUSDC_HELPER_CONTRACT_ADDRESS,
@@ -42,7 +38,7 @@ interface ActiveRoute {
 
 type LifiSteps = LiFiStepExtended[];
 
-interface PurchaseButtonProps {
+interface PayWithKeygateProps {
   value: string | number;
   fromCurrency: string;
   toCurrency: string;
@@ -51,14 +47,14 @@ interface PurchaseButtonProps {
   destinationAddress: string;
 }
 
-export function PurchaseButton({
+export function PayWithKeygate({
   value,
   fromCurrency,
   toCurrency,
   destinationAddress,
   onProcessingChange,
   disableToggle,
-}: PurchaseButtonProps) {
+}: PayWithKeygateProps) {
   const { isConnected } = useAccount();
   const [step, setStep] = useState<"start" | "connect" | "purchase">("start");
 
@@ -127,10 +123,6 @@ function DisplayQuote({
   const [fromTokenPrice, setFromTokenPrice] = useState<number | null>(null);
   const [toTokenPrice, setToTokenPrice] = useState<number | null>(null);
   const [usdcNeeded, setUsdcNeeded] = useState<string>("1"); // default to 1 USDC for fallback
-  const [activeRoutes, setActiveRoutes] = useState<any[]>([]);
-
-  // Use refs to avoid unnecessary rerenders
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch both from and to token prices from CoinGecko
   useEffect(() => {
@@ -168,16 +160,6 @@ function DisplayQuote({
   useEffect(() => {
     setUsdcNeeded(calculatedUsdcNeeded);
   }, [calculatedUsdcNeeded]);
-
-  // Fetch active routes only once when quote is available
-  useEffect(() => {
-    if (quote) {
-      const routes = getActiveRoutes();
-      setActiveRoutes(routes);
-      console.log("quote", quote);
-      console.log("Active routes", routes);
-    }
-  }, [quote]);
 
   // Memoize quote request parameters to prevent unnecessary API calls
   const quoteParams = useMemo(() => {

@@ -16,9 +16,9 @@ export function App({ children }: { children: React.ReactNode }) {
 } 
 ```
 
-3. Add the PurchaseButton to accept payments.
+3. Add the PayWithKeygate button to accept payments.
 ```typescript
-    <PurchaseButton
+    <PayWithKeygate
         value={usdcAmount}
         fromCurrency="ETH"
         toCurrency="USDC"

@@ -1,15 +1,13 @@
 "use client";
 
-import { TransactionTester } from "@/components/debug/TransactionTester";
-import { WalletInformation } from "@/components/debug/WalletInformation";
-import { PurchaseButton } from "@/components/PurchaseButton";
+import { PayWithKeygate } from "@/components/PayWithKeygate";
 import { useState } from "react";
 import Link from "next/link";
 
 export default function UsdcToCkUsdcPage() {
-  const [testLowAmount, setTestLowAmount] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const usdcAmount = testLowAmount ? 0.01 : 1;
+  const usdcAmount = 1;
+
   return (
     <div className="font-sans grid grid-rows-[20px_1fr_20px] min-h-screen p-8 pb-20 gap-16 sm:p-20">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
@@ -25,7 +23,7 @@ export default function UsdcToCkUsdcPage() {
             <h2 className="text-2xl">Buy NFT</h2>
             <p className="text-4xl font-semibold">{usdcAmount} USDC</p>
 
-            <PurchaseButton
+            <PayWithKeygate
               value={usdcAmount}
               fromCurrency="ETH"
               toCurrency="USDC"

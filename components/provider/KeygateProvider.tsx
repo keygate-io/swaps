@@ -1,6 +1,6 @@
 "use client";
 
-import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Config, CreateConnectorFn, WagmiProvider, createConfig as createWagmiConfig, http, injected } from "wagmi";
 import { useSyncWagmiConfig } from "@lifi/wallet-management";
 import { mainnet } from "wagmi/chains";

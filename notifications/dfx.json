@@ -1,0 +1,10 @@
+{
+    "defaults": {
+        "build": {
+            "args": "",
+            "packtool": ""
+        }
+    },
+    "dfx": "0.25.0",
+    "version": 1
+}

@@ -1,7 +1,6 @@
 "use client";
 
-import { WalletInformation } from "@/components/debug/WalletInformation";
-import { PurchaseButton } from "@/components/PurchaseButton";
+import { PayWithKeygate } from "@/components/PayWithKeygate";
 import { useState } from "react";
 import Link from "next/link";
 
@@ -23,7 +22,7 @@ export default function UsdcToIcpPage() {
             <h2 className="text-2xl">Buy NFT</h2>
             <p className="text-4xl font-semibold">{icpAmount} USDC</p>
 
-            <PurchaseButton
+            <PayWithKeygate
               value={icpAmount}
               fromCurrency="ETH"
               toCurrency="USDC"
